@@ -25,20 +25,8 @@
               @change="handleFilterChange"
           >
             <el-option label="全部" value="" />
-            <el-option v-for="type in operationTypes" :key="type.value" :label="type.label" :value="type.value" />
+            <el-option v-for="type in store.operationTypes" :key="type.value" :label="type.label" :value="type.value" />
           </el-select>
-        </el-col>
-
-        <el-col :span="8">
-          <el-date-picker
-              v-model="dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              @change="handleDateChange"
-              style="width: 100%"
-          />
         </el-col>
 
         <el-col :span="4">
@@ -81,14 +69,6 @@
         导出日志
       </el-button>
 
-      <el-button
-          type="danger"
-          :disabled="selectedLogs.length === 0"
-          @click="handleBatchDelete"
-      >
-        <el-icon><Delete /></el-icon>
-        批量删除
-      </el-button>
 
       <el-button
           type="info"
@@ -103,83 +83,107 @@
     <div class="log-table-container" ref="tableContainer">
       <el-table
           ref="logTable"
-          :data="store.operationLogs"
-          :loading="store.loading"
+          :data="store.paginatedLogs"
           style="width: 100%"
           @selection-change="handleSelectionChange"
-          @row-click="handleRowClick"
-          :row-class-name="tableRowClassName"
+          v-loading="store.loading"
       >
+        <!-- 选择列 -->
         <el-table-column type="selection" width="55" />
 
-        <el-table-column prop="operator" label="操作者" width="120">
+        <!-- 操作者列 -->
+        <el-table-column prop="username" label="操作者" width="120">
           <template #default="{ row }">
             <div class="operator-cell">
-              <el-avatar :size="24" :src="row.operatorAvatar" class="operator-avatar">
-                {{ row.operatorName?.charAt(0) || 'U' }}
-              </el-avatar>
-              <span class="operator-name">{{ row.operatorName || '匿名用户' }}</span>
+              <span class="operator-name">{{ row.username }}</span>
+              <small style="color: #999; margin-left: 5px;">ID: {{ row.userId }}</small>
             </div>
           </template>
         </el-table-column>
 
-        <el-table-column prop="operationTypeInfo.label" label="操作类型" width="120">
+        <!-- 模块列 -->
+        <el-table-column prop="module" label="模块" width="120">
           <template #default="{ row }">
-            <el-tag :type="row.operationTypeInfo.color" size="small">
-              <el-icon :size="14">
-                <component :is="row.operationTypeInfo.icon" />
-              </el-icon>
-              {{ row.operationTypeInfo.label }}
+            <el-tag type="info" size="small">
+              {{ row.module }}
             </el-tag>
           </template>
         </el-table-column>
 
-        <el-table-column prop="operationContent" label="操作内容" min-width="200">
+        <!-- 操作类型列 -->
+        <el-table-column prop="operationType" label="操作类型" width="100">
+          <template #default="{ row }">
+            <el-tag :type="getOperationTypeColor(row.operationType)" size="small">
+              {{ row.operationType }}
+            </el-tag>
+          </template>
+        </el-table-column>
+
+        <!-- 描述列 -->
+        <el-table-column prop="description" label="操作描述" min-width="180">
           <template #default="{ row }">
             <div class="operation-content">
-              <span class="content-text">{{ row.operationContent }}</span>
-              <el-tooltip
-                  v-if="row.details"
-                  :content="JSON.stringify(row.details, null, 2)"
-                  placement="top"
-              >
-                <el-icon class="detail-icon"><InfoFilled /></el-icon>
-              </el-tooltip>
+              <span class="content-text">{{ row.description }}</span>
             </div>
           </template>
         </el-table-column>
 
-        <el-table-column prop="ipAddress" label="IP地址" width="140">
+        <!-- 请求方法列 -->
+        <el-table-column prop="requestMethod" label="方法" width="80">
           <template #default="{ row }">
-            <span class="ip-address">{{ row.ipAddress || '--' }}</span>
+            <el-tag
+                :type="getMethodColor(row.requestMethod)"
+                size="small"
+                class="method-tag"
+            >
+              {{ row.requestMethod }}
+            </el-tag>
           </template>
         </el-table-column>
 
-        <el-table-column prop="userAgent" label="客户端" width="160">
+        <!-- URL列 -->
+        <el-table-column prop="requestUrl" label="请求URL" width="180">
           <template #default="{ row }">
-            <el-tooltip :content="row.userAgent || '未知'" placement="top">
-              <span class="user-agent">{{ truncateText(row.userAgent, 20) }}</span>
+            <span class="url-text">{{ row.requestUrl }}</span>
+          </template>
+        </el-table-column>
+
+        <!-- IP地址列 -->
+        <el-table-column prop="ipAddress" label="IP地址" width="150">
+          <template #default="{ row }">
+            <span class="ip-address">{{ row.ipAddress }}</span>
+          </template>
+        </el-table-column>
+
+        <!-- 状态列 -->
+        <el-table-column prop="status" label="状态" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
+              {{ row.status === 1 ? '成功' : '失败' }}
+            </el-tag>
+            <el-tooltip
+                v-if="row.status === 0 && row.errorMessage"
+                :content="row.errorMessage"
+                placement="top"
+            >
+              <el-icon class="error-icon"><Warning /></el-icon>
             </el-tooltip>
           </template>
         </el-table-column>
 
-        <el-table-column prop="createdAt" label="操作时间" width="180">
+        <!-- 耗时列 -->
+        <el-table-column prop="duration" label="耗时" width="90">
           <template #default="{ row }">
-            <div class="time-cell">
-              <div class="absolute-time">{{ row.formattedTime }}</div>
-              <div class="relative-time">{{ formatRelativeTime(row.createdAt) }}</div>
-            </div>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 'success' ? 'success' : 'danger'" size="small">
-              {{ row.status === 'success' ? '成功' : '失败' }}
+            <el-tag
+                :type="getDurationColor(row.duration)"
+                size="small"
+            >
+              {{ row.duration }}ms
             </el-tag>
           </template>
         </el-table-column>
 
+        <!-- 操作列 -->
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="{ row }">
             <el-button-group size="small">
@@ -187,49 +191,21 @@
                   type="primary"
                   @click.stop="handleViewDetail(row)"
                   :icon="View"
-              />
-              <el-button
-                  type="danger"
-                  @click.stop="handleDelete(row)"
-                  :icon="Delete"
-                  :loading="store.deleting"
+                  title="查看详情"
               />
             </el-button-group>
           </template>
         </el-table-column>
-
-        <!-- 空状态 -->
-        <template #empty>
-          <div class="empty-state">
-            <el-icon :size="48" color="#909399"><Document /></el-icon>
-            <p>暂无操作日志</p>
-          </div>
-        </template>
       </el-table>
-
-      <!-- 无限滚动加载 -->
-      <div
-          v-if="store.logPagination.total > store.operationLogs.length"
-          class="load-more"
-      >
-        <el-button
-            type="text"
-            :loading="store.loading"
-            @click="loadMore"
-        >
-          加载更多
-        </el-button>
-      </div>
     </div>
 
     <!-- 分页 -->
     <div class="pagination-container">
       <el-pagination
-          v-model:current-page="store.logPagination.page"
-          v-model:page-size="store.logPagination.pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="store.logPagination.total"
+          v-model:current-page="store.pagination.page"
+          v-model:page-size="store.pagination.pageSize"
+          layout="total,  prev, pager, next, jumper"
+          :total="store.filteredLogs.length"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
       />
@@ -238,7 +214,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -248,8 +224,7 @@ import {
   Download,
   Delete,
   View,
-  InfoFilled,
-  Document
+  Warning
 } from '@element-plus/icons-vue'
 import { useAdminStore } from '../../stores/adminStore'
 
@@ -260,7 +235,7 @@ const props = defineProps({
   },
   refreshInterval: {
     type: Number,
-    default: 30000 // 30秒
+    default: 30000
   }
 })
 
@@ -270,83 +245,32 @@ const router = useRouter()
 const store = useAdminStore()
 const tableContainer = ref(null)
 const logTable = ref(null)
-const dateRange = ref([])
 const selectedLogs = ref([])
 let refreshTimer = null
 
-// 本地筛选条件
-const localFilters = ref({
-  operator: '',
-  operationType: '',
-  keyword: ''
-})
+// 本地筛选条件（与store中的filters同步）
+const localFilters = ref({ ...store.filters })
 
-// 操作类型选项
-const operationTypes = computed(() => {
-  return [
-    { value: 'login', label: '用户登录' },
-    { value: 'logout', label: '用户登出' },
-    { value: 'create_exam', label: '创建考试' },
-    { value: 'update_exam', label: '更新考试' },
-    { value: 'delete_exam', label: '删除考试' },
-    { value: 'submit_practice', label: '提交练习' },
-    { value: 'view_exam', label: '查看试卷' },
-    { value: 'download_file', label: '下载文件' },
-    { value: 'upload_file', label: '上传文件' },
-    { value: 'system', label: '系统操作' },
-    { value: 'other', label: '其他操作' }
-  ]
-})
+// 监听本地筛选条件变化，同步到store
+watch(localFilters, (newVal) => {
+  store.updateFilters(newVal)
+}, { deep: true })
 
-// 截断文本
-const truncateText = (text, length = 50) => {
-  if (!text) return '--'
-  return text.length > length ? text.substring(0, length) + '...' : text
-}
-
-// 格式化相对时间
-const formatRelativeTime = (time) => {
-  if (!time) return ''
-  const now = new Date()
-  const target = new Date(time)
-  const diff = now - target
-
-  if (diff < 60000) return '刚刚' // 1分钟内
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前` // 1小时内
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前` // 1天内
-  return `${Math.floor(diff / 86400000)}天前` // 超过1天
-}
+// 监听store中的filters变化，同步到本地
+watch(() => store.filters, (newVal) => {
+  localFilters.value = { ...newVal }
+}, { deep: true })
 
 // 处理筛选变化
 const handleFilterChange = () => {
-  if (dateRange.value) {
-    localFilters.value.startDate = dateRange.value[0]?.toISOString() || ''
-    localFilters.value.endDate = dateRange.value[1]?.toISOString() || ''
-  } else {
-    localFilters.value.startDate = ''
-    localFilters.value.endDate = ''
-  }
-
-  store.updateFilters(localFilters.value)
-  store.fetchOperationLogs()
+  console.log('筛选条件变化:', localFilters.value)
   emit('filter-change', localFilters.value)
-}
-
-// 处理日期变化
-const handleDateChange = () => {
-  handleFilterChange()
 }
 
 // 重置筛选
 const handleReset = () => {
-  localFilters.value = {
-    operator: '',
-    operationType: '',
-    keyword: ''
-  }
-  dateRange.value = []
   store.resetFilters()
-  store.fetchOperationLogs()
+  localFilters.value = { ...store.filters }
 }
 
 // 处理导出
@@ -404,11 +328,6 @@ const handleSelectionChange = (selection) => {
   selectedLogs.value = selection
 }
 
-// 处理行点击
-const handleRowClick = (row) => {
-  emit('log-click', row)
-}
-
 // 查看详情
 const handleViewDetail = (row) => {
   router.push({
@@ -418,7 +337,7 @@ const handleViewDetail = (row) => {
 }
 
 // 删除单条日志
-const handleDelete = async (row) => {
+const handleDelete = async (id) => {
   try {
     await ElMessageBox.confirm('确认删除这条操作日志吗？', '警告', {
       confirmButtonText: '确认',
@@ -427,7 +346,7 @@ const handleDelete = async (row) => {
       confirmButtonClass: 'el-button--danger'
     })
 
-    const result = await store.deleteLog(row.id)
+    const result = await store.deleteLog(id)
 
     if (result.success) {
       ElMessage.success('删除成功')
@@ -439,31 +358,14 @@ const handleDelete = async (row) => {
   }
 }
 
-// 加载更多
-const loadMore = () => {
-  const currentPage = store.logPagination.page
-  store.setPagination(currentPage + 1, store.logPagination.pageSize)
-  store.fetchOperationLogs()
-}
-
-// 表格行类名
-const tableRowClassName = ({ row }) => {
-  if (row.status === 'failed') {
-    return 'warning-row'
-  }
-  return ''
-}
-
 // 分页大小变化
 const handleSizeChange = (size) => {
   store.setPagination(1, size)
-  store.fetchOperationLogs()
 }
 
 // 当前页变化
 const handleCurrentChange = (page) => {
-  store.setPagination(page, store.logPagination.pageSize)
-  store.fetchOperationLogs()
+  store.setPagination(page, store.pagination.pageSize)
 }
 
 // 自动刷新
@@ -485,16 +387,47 @@ const stopAutoRefresh = () => {
 
 // 初始化
 onMounted(() => {
-  store.fetchOperationLogs()
+  store.init()
   startAutoRefresh()
 })
 
 onUnmounted(() => {
   stopAutoRefresh()
 })
+
+const getOperationTypeColor = (type) => {
+  const colors = {
+    '创建': 'success',
+    '更新': 'primary',
+    '删除': 'danger',
+    '查询': 'info',
+    '登录': 'warning',
+    '登出': 'warning'
+  }
+  return colors[type] || 'default'
+}
+
+const getMethodColor = (method) => {
+  const colors = {
+    'GET': 'success',
+    'POST': 'primary',
+    'PUT': 'warning',
+    'DELETE': 'danger',
+    'PATCH': 'info'
+  }
+  return colors[method] || 'default'
+}
+
+const getDurationColor = (duration) => {
+  if (!duration) return 'info'
+  if (duration < 100) return 'success'
+  if (duration < 500) return 'warning'
+  return 'danger'
+}
 </script>
 
 <style scoped>
+/* 样式保持不变 */
 .operation-log-list {
   height: 100%;
   display: flex;

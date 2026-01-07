@@ -85,6 +85,13 @@ const routes = [
                   requiresAuth: true
               }
           },
+          {
+              path:'dailyTest',
+              component: dailyTest,
+              meta:{
+                  title: "每日练习"
+              }
+          },
       ]
 
     },
@@ -109,13 +116,6 @@ const routes = [
     //         title:"参与考试"
     //     }
     // },
-    {
-        path:'/dailyTest',
-        component: dailyTest,
-        meta:{
-            title: "每日练习"
-        }
-    },
     {
         path: '/admin',
         name: 'AdminDashboard',

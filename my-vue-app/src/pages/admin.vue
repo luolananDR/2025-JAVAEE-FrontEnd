@@ -1,7 +1,5 @@
-<template>
-  <Layout />
-
-    <!-- 注意：根据之前讨论，这里应该移除 <Layout /> -->
+<template xmlns="http://www.w3.org/1999/html">
+  <Header style="z-index: 100" ></Header>
     <div class="admin-dashboard">
       <!-- 顶部导航 -->
       <div class="admin-header">
@@ -136,7 +134,7 @@ import {
   Close
 } from '@element-plus/icons-vue'
 import { useAdminStore } from '../stores/adminStore'
-import Layout from '../components/Layout/layout.vue'
+import Header from '../components/Layout/Header.vue'
 import OperationLogList from '../components/admin/OperationLogList.vue'
 
 const router = useRouter()
@@ -255,22 +253,8 @@ const loadNotifications = () => {
   notifications.value = [
     {
       id: 1,
-      type: 'warning',
-      title: '系统将在1小时后进行维护',
-      time: new Date(Date.now() - 30 * 60000),
-      read: false
-    },
-    {
-      id: 2,
-      type: 'success',
-      title: '数据库备份成功',
-      time: new Date(Date.now() - 2 * 3600000),
-      read: true
-    },
-    {
-      id: 3,
       type: 'info',
-      title: '新用户注册成功',
+      title: '暂无通知',
       time: new Date(Date.now() - 5 * 3600000),
       read: true
     }
@@ -301,10 +285,10 @@ onUnmounted(() => {
   padding: 20px;
   background-color: #f5f7fa;
   min-height: 100vh;
-  /* 为侧边栏留出空间 */
-  margin-left: 280px; /* 与侧边栏宽度一致 */
   transition: margin-left 0.3s ease;
-  width: calc(100% - 280px);
+  width: 100%;
+  top: 75px;
+  position: fixed;
 }
 
 /* 当侧边栏折叠时 */
@@ -518,8 +502,8 @@ onUnmounted(() => {
 
 @media (max-width: 1200px) {
   .admin-dashboard {
-    margin-left: 64px;
-    width: calc(100% - 64px);
+    margin-left: 0;
+    width: 100%;
   }
 
   .info-sidebar {

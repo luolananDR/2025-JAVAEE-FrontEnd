@@ -1,5 +1,5 @@
 <template>
-  <Layout />
+  <Header style="z-index: 100" ></Header>
   <div class="operation-log-detail">
     <!-- 返回按钮 -->
     <div class="back-button">
@@ -19,8 +19,12 @@
             </el-tag>
           </div>
           <div class="header-actions">
-            <el-button type="primary" :icon="Printer" @click="printDetail">打印</el-button>
-            <el-button type="danger" :icon="Delete" @click="handleDelete">删除</el-button>
+            <el-button type="primary" :icon="Printer" @click="printDetail" plain>
+              打印
+            </el-button>
+            <el-button type="danger" :icon="Delete" @click="handleDelete" plain>
+              删除
+            </el-button>
           </div>
         </div>
       </template>
@@ -28,66 +32,80 @@
       <el-descriptions :column="2" border>
         <el-descriptions-item label="操作ID">{{ logDetail.id }}</el-descriptions-item>
         <el-descriptions-item label="操作状态">
-          <el-tag :type="logDetail.status === 'success' ? 'success' : 'danger'">
-            {{ logDetail.status === 'success' ? '成功' : '失败' }}
+          <el-tag :type="logDetail.status === 1 ? 'success' : 'danger'">
+            {{ logDetail.status === 1 ? '成功' : '失败' }}
           </el-tag>
+          <el-tooltip
+              v-if="logDetail.status === 0 && logDetail.errorMessage"
+              :content="logDetail.errorMessage"
+              placement="top"
+          >
+            <el-icon style="margin-left: 8px; color: #f56c6c;"><Warning /></el-icon>
+          </el-tooltip>
         </el-descriptions-item>
 
         <el-descriptions-item label="操作者">
           <div class="operator-info">
-            <el-avatar :size="32" :src="logDetail.operatorAvatar" class="operator-avatar">
-              {{ logDetail.operatorName?.charAt(0) || 'U' }}
+            <el-avatar :size="32" :src="logDetail.username" class="operator-avatar">
+              {{ logDetail.username?.charAt(0) || 'U' }}
             </el-avatar>
             <div class="operator-detail">
-              <div class="operator-name">{{ logDetail.operatorName || '匿名用户' }}</div>
-              <div class="operator-id">ID: {{ logDetail.operatorId }}</div>
+              <div class="operator-name">{{ logDetail.username || '匿名用户' }}</div>
+              <div class="operator-id">用户ID: {{ logDetail.userId }}</div>
             </div>
           </div>
         </el-descriptions-item>
-        <el-descriptions-item label="用户角色">{{ logDetail.operatorRole || '--' }}</el-descriptions-item>
 
-        <el-descriptions-item label="操作时间">{{ formatDateTime(logDetail.createdAt) }}</el-descriptions-item>
+        <el-descriptions-item label="模块">
+          <el-tag type="info" size="small">{{ logDetail.module || '--' }}</el-tag>
+        </el-descriptions-item>
+
+        <el-descriptions-item label="操作时间">{{ formatDateTime(logDetail.createTime) }}</el-descriptions-item>
         <el-descriptions-item label="操作耗时">
-          {{ logDetail.executionTime ? `${logDetail.executionTime}ms` : '--' }}
+          <el-tag :type="getDurationColor(logDetail.duration)" size="small">
+            {{ logDetail.duration ? `${logDetail.duration}ms` : '--' }}
+          </el-tag>
         </el-descriptions-item>
 
         <el-descriptions-item label="IP地址">{{ logDetail.ipAddress || '--' }}</el-descriptions-item>
-        <el-descriptions-item label="地理位置">{{ logDetail.location || '--' }}</el-descriptions-item>
+        <el-descriptions-item label="请求方法">
+          <el-tag :type="getMethodColor(logDetail.requestMethod)" size="small">
+            {{ logDetail.requestMethod || '--' }}
+          </el-tag>
+        </el-descriptions-item>
 
         <el-descriptions-item label="设备信息" :span="2">
           {{ logDetail.userAgent || '--' }}
         </el-descriptions-item>
 
-        <el-descriptions-item label="操作内容" :span="2">
+        <el-descriptions-item label="操作描述" :span="2">
           <div class="operation-content">
-            {{ logDetail.operationContent }}
+            {{ logDetail.description }}
           </div>
         </el-descriptions-item>
 
-        <el-descriptions-item label="详细参数" :span="2">
+        <el-descriptions-item label="请求URL" :span="2">
+          <div class="url-info">
+            <code>{{ logDetail.requestUrl || '--' }}</code>
+          </div>
+        </el-descriptions-item>
+
+        <el-descriptions-item label="请求参数" :span="2">
           <div class="detail-params">
-            <pre>{{ formatJSON(logDetail.details) }}</pre>
+            <pre v-if="logDetail.requestParams">{{ formatJSONString(logDetail.requestParams) }}</pre>
+            <span v-else class="empty-text">无</span>
           </div>
         </el-descriptions-item>
 
-        <el-descriptions-item label="错误信息" :span="2" v-if="logDetail.error">
-          <div class="error-info">
-            <el-alert :title="logDetail.error.message" type="error" :closable="false">
-              <template #default>
-                <div v-if="logDetail.error.stack" class="error-stack">
-                  <pre>{{ logDetail.error.stack }}</pre>
-                </div>
-              </template>
-            </el-alert>
+        <el-descriptions-item label="响应结果" :span="2">
+          <div class="detail-params">
+            <pre v-if="logDetail.responseResult">{{ formatJSONString(logDetail.responseResult) }}</pre>
+            <span v-else class="empty-text">无</span>
           </div>
         </el-descriptions-item>
 
-        <el-descriptions-item label="相关资源" :span="2" v-if="logDetail.resource">
-          <div class="resource-info">
-            <el-tag v-if="logDetail.resource.type" type="info">{{ logDetail.resource.type }}</el-tag>
-            <span v-if="logDetail.resource.id">ID: {{ logDetail.resource.id }}</span>
-            <span v-if="logDetail.resource.name">名称: {{ logDetail.resource.name }}</span>
-          </div>
+        <el-descriptions-item label="更新时间" :span="2">
+          {{ formatDateTime(logDetail.updateTime) }}
         </el-descriptions-item>
       </el-descriptions>
     </el-card>
@@ -102,6 +120,7 @@
       <el-result icon="error" title="加载失败" :sub-title="error">
         <template #extra>
           <el-button type="primary" @click="retry">重试</el-button>
+          <el-button @click="goBack">返回列表</el-button>
         </template>
       </el-result>
     </div>
@@ -109,49 +128,82 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import {ref, onMounted, computed} from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ArrowLeft,
   Printer,
-  Delete
+  Delete,
+  Warning
 } from '@element-plus/icons-vue'
 import { useAdminStore } from '../stores/adminStore'
-import Layout from '../components/Layout/layout.vue'
+import Header from "../components/Layout/Header.vue";
 
 const route = useRoute()
 const router = useRouter()
 const store = useAdminStore()
 
-const logDetail = ref(null)
 const loading = ref(false)
 const error = ref('')
+
+// 计算属性：从store获取当前日志详情
+const logDetail = computed(() => {
+  const logId = route.query.id
+  if (!logId) return null
+
+  // 先从已加载的数据中查找
+  const existingLog = store.allLogs.find(log => log.id === parseInt(logId))
+  if (existingLog) {
+    return existingLog
+  }
+
+  // 如果没有找到，可能是通过store.getLogDetail加载的详情
+  // 这里需要根据你的实际实现来调整
+  return null
+})
 
 // 格式化日期时间
 const formatDateTime = (time) => {
   if (!time) return '--'
-  return new Date(time).toLocaleString('zh-CN')
+  try {
+    return new Date(time).toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    })
+  } catch {
+    return time
+  }
 }
 
-// 格式化JSON
-const formatJSON = (obj) => {
-  if (!obj) return '无'
+// 格式化JSON字符串（如果已经是JSON字符串）
+const formatJSONString = (jsonStr) => {
+  if (!jsonStr) return '无'
   try {
+    // 尝试解析为JSON对象
+    const obj = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr
     return JSON.stringify(obj, null, 2)
   } catch {
-    return String(obj)
+    // 如果不是JSON，直接返回原始字符串
+    return jsonStr
   }
 }
 
 // 获取操作类型颜色
 const getOperationTypeColor = (type) => {
   const colorMap = {
-    'login': 'success',
-    'logout': 'info',
-    'create_exam': 'primary',
-    'submit_practice': 'success',
-    'system': 'warning'
+    '创建': 'success',
+    '删除': 'danger',
+    '查询': 'info',
+    '配置': 'warning',
+    '登录': 'success',
+    '登出': 'info',
+    '导出': 'info'
   }
   return colorMap[type] || 'info'
 }
@@ -159,6 +211,11 @@ const getOperationTypeColor = (type) => {
 // 获取操作类型标签
 const getOperationTypeLabel = (type) => {
   const labelMap = {
+    '创建': '创建',
+    '更新': '更新',
+    '删除': '删除',
+    '查询': '查询',
+    '配置': '配置',
     'login': '用户登录',
     'logout': '用户登出',
     'create_exam': '创建考试',
@@ -167,7 +224,27 @@ const getOperationTypeLabel = (type) => {
     'submit_practice': '提交练习',
     'view_exam': '查看试卷'
   }
-  return labelMap[type] || type
+  return labelMap[type] || type || '--'
+}
+
+// 获取方法颜色
+const getMethodColor = (method) => {
+  const colors = {
+    'GET': 'success',
+    'POST': 'primary',
+    'PUT': 'warning',
+    'DELETE': 'danger',
+    'PATCH': 'info'
+  }
+  return colors[method] || 'default'
+}
+
+// 获取耗时颜色
+const getDurationColor = (duration) => {
+  if (!duration) return 'info'
+  if (duration < 100) return 'success'
+  if (duration < 500) return 'warning'
+  return 'danger'
 }
 
 // 加载日志详情
@@ -182,12 +259,19 @@ const loadLogDetail = async () => {
     loading.value = true
     error.value = ''
 
-    const result = await store.fetchLogDetail(logId)
+    console.log('📄 加载日志详情，ID:', logId)
+
+    // 使用store的方法获取详情
+    const result = await store.getLogDetail(logId)
+
+    console.log('📄 加载结果:', result)
 
     if (result.success) {
-      logDetail.value = result.data
+      // 数据已经在store的getLogDetail中处理
+      // 现在logDetail计算属性会从store中获取数据
     } else {
-      error.value = result.error || '加载失败'
+      error.value = result.message || '加载失败'
+      console.error('加载失败:', result)
     }
   } catch (err) {
     console.error('加载日志详情失败:', err)
@@ -199,7 +283,9 @@ const loadLogDetail = async () => {
 
 // 返回上一页
 const goBack = () => {
-  router.go(-1)
+  router.push({
+    path: "/admin",
+  })
 }
 
 // 打印详情
@@ -222,8 +308,10 @@ const handleDelete = async () => {
     const result = await store.deleteLog(logDetail.value.id)
 
     if (result.success) {
-      ElMessage.success('删除成功')
-      router.push({ name: 'AdminDashboard' })
+      ElMessage.success(result.message || '删除成功')
+      goBack()
+    } else {
+      ElMessage.error(result.message || '删除失败')
     }
   } catch (err) {
     if (err !== 'cancel') {
@@ -237,8 +325,14 @@ const retry = () => {
   loadLogDetail()
 }
 
-onMounted(() => {
-  loadLogDetail()
+onMounted(async () => {
+  await loadLogDetail()
+
+  console.log("详情页面加载完成:", {
+    routeQuery: route.query,
+    logDetail: logDetail.value,
+    allLogsLength: store.allLogs.length
+  })
 })
 </script>
 
@@ -247,6 +341,13 @@ onMounted(() => {
   padding: 20px;
   background-color: #f5f7fa;
   min-height: 100vh;
+  position: fixed;
+  width: 100%;
+  top: 75px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
 }
 
 .back-button {
@@ -255,6 +356,7 @@ onMounted(() => {
 
 .detail-card {
   border-radius: 12px;
+  margin-bottom: 20px;
 }
 
 .card-header {
@@ -288,6 +390,8 @@ onMounted(() => {
 
 .operator-avatar {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: bold;
 }
 
 .operator-detail {
@@ -311,6 +415,21 @@ onMounted(() => {
   border-radius: 4px;
   border-left: 4px solid #409eff;
   white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.url-info {
+  padding: 8px 12px;
+  background: #f6f8fa;
+  border-radius: 4px;
+  border: 1px solid #e1e4e8;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.url-info code {
+  color: #0366d6;
 }
 
 .detail-params {
@@ -319,6 +438,8 @@ onMounted(() => {
   border-radius: 4px;
   border: 1px solid #e1e4e8;
   overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 .detail-params pre {
@@ -329,29 +450,9 @@ onMounted(() => {
   color: #24292e;
 }
 
-.error-info {
-  margin-top: 8px;
-}
-
-.error-stack {
-  margin-top: 8px;
-  padding: 8px;
-  background: #fff1f0;
-  border-radius: 4px;
-  overflow-x: auto;
-}
-
-.error-stack pre {
-  margin: 0;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 12px;
-  color: #cf222e;
-}
-
-.resource-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.empty-text {
+  color: #909399;
+  font-style: italic;
 }
 
 .loading-container {
@@ -365,13 +466,14 @@ onMounted(() => {
   padding: 40px;
   border-radius: 12px;
   text-align: center;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 /* 打印样式 */
 @media print {
   .back-button,
-  .header-actions,
-  .header-title h2 {
+  .header-actions {
     display: none;
   }
 
@@ -382,6 +484,11 @@ onMounted(() => {
 
   .el-descriptions {
     break-inside: avoid;
+  }
+
+  .operation-log-detail {
+    position: static;
+    top: 0;
   }
 }
 </style>

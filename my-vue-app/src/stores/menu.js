@@ -7,7 +7,7 @@ export const menuWidthStore = defineStore("menuWidth" , {
         isCollapse: false,
         //路径映射
         menuList: [
-            { index: '1', path: '/#', name: '每日一练' },
+            { index: '1', path: '/dailyTest', name: '每日一练' },
             { index: '2', path: '/publishTest', name: '发布考试' },
             { index: '3', path: '/queryExam', name: '参与考试' },
             { index: '4', path: '/#', name: '查看试卷' },

@@ -1,5 +1,4 @@
 <template>
-  <Layout></Layout>
   <div class="daily-practice-container">
     <el-container class="main-container">
       <!-- 头部 -->
@@ -27,21 +26,15 @@
             <el-card class="question-card" shadow="always">
               <div class="question-header">
                 <el-tag
-                    :type="getCategoryType(store.currentQuestion?.category)"
-                    size="large"
-                >
-                  {{ store.currentQuestion?.category || '未知类别' }}
-                </el-tag>
-                <el-tag
                     :type="getDifficultyType(store.currentQuestion?.difficulty)"
                     size="large"
                 >
-                  {{ difficultyText }}
+                  难度：{{ difficultyText }}
                 </el-tag>
               </div>
 
               <div class="question-content">
-                <h3 class="question-text">{{ store.currentQuestion?.text || '加载中...' }}</h3>
+                <h3 class="question-text">{{ store.currentQuestion?.content || '加载中...' }}</h3>
 
                 <div class="options-container">
                   <el-radio-group
@@ -55,10 +48,11 @@
                         :label="index"
                         :class="store.getOptionClass(index)"
                         class="option-item"
+                        @click="store.selectOption(option.key)"
                     >
                       <div class="option-content">
-                        <span class="option-letter">{{ String.fromCharCode(65 + index) }}</span>
-                        <span class="option-text">{{ option }}</span>
+                        <span class="option-letter">{{ option.key }}: </span>
+                        <span class="option-text">{{ option.text }}</span>
                       </div>
                     </el-radio>
                   </el-radio-group>
@@ -84,17 +78,6 @@
                   </el-button>
 
                   <el-button
-                      @click="handleNextQuestion"
-                      :disabled="!store.answerSubmitted || store.loading"
-                      class="next-btn"
-                      size="large"
-                      :loading="store.loading"
-                  >
-                    <i class="fas fa-forward"></i>
-                    下一题
-                  </el-button>
-
-                  <el-button
                       @click="getRandomQuestion"
                       type="info"
                       plain
@@ -116,26 +99,14 @@
                     class="result-alert"
                 >
                   <div v-if="!store.isAnswerCorrect && store.currentQuestion">
-                    <p>正确答案是: <strong>{{ String.fromCharCode(65 + store.currentQuestion.correctAnswer) }}</strong></p>
+                    <p>正确答案是: <strong>{{ store.currentQuestion.correctAnswer }}</strong></p>
                   </div>
-                  <div class="explanation" v-if="store.currentQuestion?.explanation">
-                    <p><strong>解析：</strong> {{ store.currentQuestion.explanation }}</p>
-                  </div>
+<!--                  <div class="explanation" v-if="store.currentQuestion?.explanation">-->
+<!--                    <p><strong>解析：</strong> {{ store.currentQuestion.explanation }}</p>-->
+<!--                  </div>-->
                 </el-alert>
               </div>
             </el-card>
-
-            <!-- 进度条 -->
-            <div class="progress-section">
-              <el-progress
-                  :percentage="progressPercentage"
-                  :stroke-width="16"
-                  :format="formatProgress"
-                  color="#4b6cb7"
-                  striped
-                  striped-flow
-              />
-            </div>
           </template>
         </el-main>
 
@@ -144,10 +115,10 @@
           <PracticeStats
               :answered-count="answeredCount"
               :total-questions="100"
-              :progress-percentage="progressPercentage"
-              :correct-rate="store.correctRate"
-              :streak-days="store.streakDays"
-          />
+              :progress-percentage="progressPercentage"/>
+          <!--              :correct-rate="store.correctRate"-->
+          <!--              :streak-days="store.streakDays"-->
+<!--          />-->
 
           <!-- 历史记录 -->
           <el-card class="history-card" shadow="hover">
@@ -184,11 +155,11 @@
                 </div>
               </div>
 
-              <div v-if="store.recentHistory.length === 0" class="empty-history">
-                <i class="fas fa-clipboard-list"></i>
-                <p>暂无答题记录</p>
-                <el-button type="text" @click="loadPracticeHistory">加载更多</el-button>
-              </div>
+<!--              <div v-if="store.recentHistory.length === 0" class="empty-history">-->
+<!--                <i class="fas fa-clipboard-list"></i>-->
+<!--                <p>暂无答题记录</p>-->
+<!--&lt;!&ndash;                <el-button type="text" @click="loadPracticeHistory">加载更多</el-button>&ndash;&gt;-->
+<!--              </div>-->
             </el-scrollbar>
           </el-card>
 
@@ -206,27 +177,27 @@
           </el-card>
 
           <!-- 练习统计详情 -->
-          <el-card class="stats-detail-card" shadow="hover" v-if="store.practiceStats">
-            <template #header>
-              <div class="card-header">
-                <span><i class="fas fa-chart-bar"></i> 详细统计</span>
-              </div>
-            </template>
-            <div class="stats-detail">
-              <div class="stat-item">
-                <span class="stat-label">今日练习:</span>
-                <span class="stat-value">{{ store.practiceStats.todayCount || 0 }} 题</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">本周练习:</span>
-                <span class="stat-value">{{ store.practiceStats.weekCount || 0 }} 题</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">累计练习:</span>
-                <span class="stat-value">{{ store.practiceStats.totalCount || 0 }} 题</span>
-              </div>
-            </div>
-          </el-card>
+<!--          <el-card class="stats-detail-card" shadow="hover" v-if="store.practiceStats">-->
+<!--            <template #header>-->
+<!--              <div class="card-header">-->
+<!--                <span><i class="fas fa-chart-bar"></i> 详细统计</span>-->
+<!--              </div>-->
+<!--            </template>-->
+<!--            <div class="stats-detail">-->
+<!--              <div class="stat-item">-->
+<!--&lt;!&ndash;                <span class="stat-label">今日练习:</span>&ndash;&gt;-->
+<!--&lt;!&ndash;                <span class="stat-value">{{ store.practiceStats.todayCount || 0 }} 题</span>&ndash;&gt;-->
+<!--&lt;!&ndash;              </div>&ndash;&gt;-->
+<!--&lt;!&ndash;              <div class="stat-item">&ndash;&gt;-->
+<!--&lt;!&ndash;                <span class="stat-label">本周练习:</span>&ndash;&gt;-->
+<!--&lt;!&ndash;                <span class="stat-value">{{ store.practiceStats.weekCount || 0 }} 题</span>&ndash;&gt;-->
+<!--&lt;!&ndash;              </div>&ndash;&gt;-->
+<!--&lt;!&ndash;              <div class="stat-item">&ndash;&gt;-->
+<!--&lt;!&ndash;                <span class="stat-label">累计练习:</span>&ndash;&gt;-->
+<!--&lt;!&ndash;                <span class="stat-value">{{ store.practiceStats.totalCount || 0 }} 题</span>&ndash;&gt;-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </el-card>-->
         </el-aside>
       </el-container>
     </el-container>
@@ -238,7 +209,6 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { usePracticeStore } from '../stores/practiceStore'
 import PracticeStats from '../components/PracticeStats.vue'
-import Layout from '../components/Layout/layout.vue'
 
 const store = usePracticeStore()
 const refreshingHistory = ref(false)
@@ -255,14 +225,14 @@ const difficultyText = computed(() => {
   return difficultyMap[store.currentQuestion.difficulty] || store.currentQuestion.difficulty
 })
 
-const answeredCount = computed(() => store.history.length)
+// const answeredCount = computed(() => store.history.length)
 
-const progressPercentage = computed(() => {
-  // 这里可以根据实际需求计算进度
-  // 例如：完成的题目数/总目标数
-  const target = 30 // 假设每月目标30题
-  return Math.min((answeredCount.value / target) * 100, 100)
-})
+// const progressPercentage = computed(() => {
+//   // 这里可以根据实际需求计算进度
+//   // 例如：完成的题目数/总目标数
+//   const target = 30 // 假设每月目标30题
+//   return Math.min((answeredCount.value / target) * 100, 100)
+// })
 
 // 初始化当前日期
 const initCurrentDate = () => {
@@ -276,7 +246,7 @@ const initCurrentDate = () => {
 
 // 组件挂载时初始化
 onMounted(async () => {
-  initCurrentDate()
+  //initCurrentDate()
 
   try {
     // 初始化练习数据
@@ -332,8 +302,6 @@ const handleSubmitAnswer = async () => {
     const result = await store.submitPracticeAnswer()
 
     if (result.success) {
-      // 提交成功后自动获取最新统计
-      await store.fetchPracticeStats()
       ElMessage.success('答案提交成功！')
     } else {
       ElMessage.error(result.error || '提交失败')
@@ -343,26 +311,6 @@ const handleSubmitAnswer = async () => {
     ElMessage.error('提交答案失败，请重试')
   }
 }
-
-// 处理下一题
-const handleNextQuestion = async () => {
-  try {
-    // 从服务器获取新的每日一题
-    const result = await store.fetchDailyQuestion()
-
-    if (result.success) {
-      ElMessage.success('已加载新题目')
-    } else {
-      // 如果API失败，使用本地题目（如果有）
-      store.resetQuestionState()
-      ElMessage.warning('加载新题目失败，已重置当前题目状态')
-    }
-  } catch (error) {
-    console.error('加载下一题失败:', error)
-    ElMessage.error('加载新题目失败')
-  }
-}
-
 // 获取随机题目
 const getRandomQuestion = async () => {
   try {
@@ -378,43 +326,6 @@ const getRandomQuestion = async () => {
   } catch (error) {
     console.error('获取随机题目失败:', error)
     ElMessage.error('获取随机题目失败')
-  }
-}
-
-// 刷新历史记录
-const refreshHistory = async () => {
-  try {
-    refreshingHistory.value = true
-    // 这里可以添加从服务器获取历史记录的逻辑
-    // 暂时使用本地历史记录
-    await new Promise(resolve => setTimeout(resolve, 500)) // 模拟加载
-    ElMessage.success('历史记录已刷新')
-  } catch (error) {
-    console.error('刷新历史记录失败:', error)
-    ElMessage.error('刷新失败')
-  } finally {
-    refreshingHistory.value = false
-  }
-}
-
-// 加载更多练习历史
-const loadPracticeHistory = async () => {
-  try {
-    const result = await store.fetchPracticeHistory({
-      page: 1,
-      pageSize: 10
-    })
-
-    if (result.success) {
-      if (result.data && result.data.length > 0) {
-        ElMessage.success(`加载了 ${result.data.length} 条历史记录`)
-      } else {
-        ElMessage.info('没有更多历史记录')
-      }
-    }
-  } catch (error) {
-    console.error('加载练习历史失败:', error)
-    ElMessage.error('加载历史记录失败')
   }
 }
 </script>
@@ -484,6 +395,7 @@ const loadPracticeHistory = async () => {
   }
 
   .app-header {
+    top:15px;
     padding: 15px 20px;
   }
 
