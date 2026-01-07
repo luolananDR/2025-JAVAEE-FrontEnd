@@ -405,13 +405,17 @@ const clearTimer = () => {
 }
 
 const formatTime = (seconds) => {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = seconds % 60
-  if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
-  }
-  return `${minutes}:${String(secs).padStart(2, '0')}`
+  seconds = Math.max(0, Math.floor(seconds)); // 取整且保证不为负
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+
+  // 格式化成 hh:mm:ss
+  const hh = h.toString().padStart(2, '0');
+  const mm = m.toString().padStart(2, '0');
+  const ss = s.toString().padStart(2, '0');
+
+  return `${hh}:${mm}:${ss}`;
 }
 
 
@@ -911,7 +915,7 @@ const askAI = async (question,index) => {
 
 /* 批改 / 查看模式（内容更少） */
 .answer-card-sidebar.grade-mode {
-  height: 400px;
+  height: 600px;
 }
 /* 答题卡头部 */
 .answer-card-header {
