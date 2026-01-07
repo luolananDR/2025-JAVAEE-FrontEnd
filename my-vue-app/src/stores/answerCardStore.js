@@ -49,7 +49,24 @@ export const useAnswerCardStore = defineStore('answerCard', () => {
     const initExam = (examData) => {
         currentExam.value = examData
         startTime.value = Date.now()
-        remainingTime.value = currentExam.value.duration * 60
+        console.log(Date.now())
+        console.log(currentExam.value.startTime)
+        // 获取今天的日期
+        const now = new Date();
+        const [hours, minutes] = currentExam.value.startTime.split(':').map(Number);
+        // 构造今天 的时间对象
+        const startTimeDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            hours,
+            minutes,
+            0
+        );
+        // 转成毫秒时间戳
+        const startTimestamp = startTimeDate.getTime();
+        // 计算剩余时间（秒）
+        remainingTime.value = currentExam.value.duration * 60 - (Date.now() - startTimestamp) / 1000;
 
         const initialAnswers = examData.questions.map(q => q.answer)
         initAnswers(initialAnswers)
