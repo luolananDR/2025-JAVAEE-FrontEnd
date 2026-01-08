@@ -4,7 +4,7 @@ export const questionApi = {
 
     // 获取每日一题
     getDailyQuestion() {
-        return request.get('/api/wrong-questions/daily-practice')
+        return request.get('/wrong-question/answer/random')
     },
 }
 
@@ -20,7 +20,6 @@ export const questionApi = {
 //         difficulty: 2,
 //         subjectId: 3,
 //         chapterId: 5,
-//         knowledgePoints: "物理常数",
 //         options: [
 //             { key: "A", text: "3×10⁸ m/s" },
 //             { key: "B", text: "3×10⁵ m/s" },

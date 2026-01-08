@@ -22,9 +22,6 @@
             <el-button type="primary" :icon="Printer" @click="printDetail" plain>
               打印
             </el-button>
-            <el-button type="danger" :icon="Delete" @click="handleDelete" plain>
-              删除
-            </el-button>
           </div>
         </div>
       </template>
