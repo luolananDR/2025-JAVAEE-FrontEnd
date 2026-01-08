@@ -6,12 +6,12 @@ export const useUserStore = defineStore('user', () => {
     const token = ref('')
     const userInfo = ref(null)
     const isLoggedIn = computed(() => !!token.value)
-    const isAdmin=ref(false)
+    let isAdmin=ref(false)
 
     // 设置用户信息（登录后调用）
     function setUser(userId, name, email, userToken) {
         token.value = userToken
-        userInfo.value = { id: userId, name, email }
+        userInfo.value = { id: userId, name, email, isAdmin}
 
         // 保存到 localStorage
         localStorage.setItem('token', token.value)

@@ -296,6 +296,7 @@ const sendVerifyCode = async () => {
 //登录提交
 const onSubmit = () => {
   const role=isAdminLogin.value ? 'ADMIN' : 'USER'
+
   formRef.value.validate((valid) => {
     if (role==='USER'&&!valid) {
       console.log('表单验证失败')
@@ -322,9 +323,10 @@ const onSubmit = () => {
           // 存 token + 用户信息 到 store & localStorage
           userStore.setUser(res.id, res.name, res.userName, res.token)
           userStore.isAdmin=true
+          console.log(userStore.isAdmin)
           // 跳转首页
-          if(role==='USER')router.push('/')
-          else router.push('/dailyTest')
+          if(!userStore.isAdmin)router.push('/')
+          else router.push('/admin')
         })
         .catch(err => {
           console.log(err)

@@ -77,16 +77,16 @@
                     </template>
                   </el-button>
 
-<!--                  <el-button-->
-<!--                      @click="getRandomQuestion"-->
-<!--                      type="info"-->
-<!--                      plain-->
-<!--                      size="large"-->
-<!--                      :disabled="store.loading"-->
-<!--                  >-->
-<!--                    <i class="fas fa-random"></i>-->
-<!--                    随机题目-->
-<!--                  </el-button>-->
+                  <el-button
+                      @click="getRandomQuestion"
+                      type="info"
+                      plain
+                      size="large"
+                      :disabled="store.loading"
+                  >
+                    <i class="fas fa-random"></i>
+                    随机题目
+                  </el-button>
                 </div>
 
                 <!-- 结果展示 -->
